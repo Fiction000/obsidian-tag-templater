@@ -1,0 +1,24 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Build output
+main.js
+main.js.map
+*.js.map
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
