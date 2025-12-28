@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import TagTemplaterPlugin from '../main';
 import { TagConfig } from './types';
+import { TemplatePathSuggest } from './ui/TemplatePathSuggest';
 
 export class TagTemplaterSettingTab extends PluginSettingTab {
 	plugin: TagTemplaterPlugin;
@@ -120,14 +121,19 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 		// Template path
 		new Setting(configContainer)
 			.setName('Template path')
-			.setDesc('Path to the template file')
-			.addText(text => text
-				.setPlaceholder('Templates/Todo.md')
-				.setValue(config.templatePath)
-				.onChange(async (value) => {
-					config.templatePath = value.trim();
-					await this.plugin.saveSettings();
-				}));
+			.setDesc('Path to the template file (autocomplete available)')
+			.addText(text => {
+				text
+					.setPlaceholder('Templates/Todo.md')
+					.setValue(config.templatePath)
+					.onChange(async (value) => {
+						config.templatePath = value.trim();
+						await this.plugin.saveSettings();
+					});
+
+				// Attach autocomplete to the input element
+				new TemplatePathSuggest(this.app, text.inputEl);
+			});
 
 		// Filename suffix
 		new Setting(configContainer)
