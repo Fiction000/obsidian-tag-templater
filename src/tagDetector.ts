@@ -1,9 +1,67 @@
 import { Editor, MarkdownView } from 'obsidian';
-import { TagConfig, TagStateEntry } from './types';
+import { TagConfig, TagStateEntry, TAG_REGEX } from './types';
+
+// Configuration constants for state cleanup
+const MAX_LINES_PER_FILE = 1000; // Maximum lines to track per file
+const STATE_CLEANUP_INTERVAL = 5 * 60 * 1000; // Cleanup every 5 minutes
+const STATE_EXPIRY_TIME = 30 * 60 * 1000; // Remove state older than 30 minutes
 
 export class TagDetector {
 	private fileTagState: Map<string, TagStateEntry> = new Map();
 	private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
+	private cleanupTimer: NodeJS.Timeout | null = null;
+
+	constructor() {
+		// Start periodic cleanup to prevent memory leaks
+		this.startPeriodicCleanup();
+	}
+
+	/**
+	 * Starts periodic cleanup of stale state entries
+	 */
+	private startPeriodicCleanup(): void {
+		this.cleanupTimer = setInterval(() => {
+			this.cleanupStaleState();
+		}, STATE_CLEANUP_INTERVAL);
+	}
+
+	/**
+	 * Removes stale state entries that haven't been modified recently
+	 */
+	private cleanupStaleState(): void {
+		const now = Date.now();
+		const filesToRemove: string[] = [];
+
+		for (const [filePath, stateEntry] of this.fileTagState.entries()) {
+			// Remove files that haven't been modified in a while
+			if (now - stateEntry.lastModified > STATE_EXPIRY_TIME) {
+				filesToRemove.push(filePath);
+			}
+		}
+
+		// Remove stale entries
+		for (const filePath of filesToRemove) {
+			this.fileTagState.delete(filePath);
+		}
+	}
+
+	/**
+	 * Enforces maximum line limit per file by removing oldest entries
+	 */
+	private enforceLineLimitForFile(stateEntry: TagStateEntry): void {
+		if (stateEntry.processedLines.size > MAX_LINES_PER_FILE) {
+			// Convert to array, sort by line number, and keep only recent entries
+			const sortedLines = Array.from(stateEntry.processedLines.keys()).sort((a, b) => b - a);
+			const linesToKeep = new Set(sortedLines.slice(0, MAX_LINES_PER_FILE));
+
+			// Remove old entries
+			for (const lineNum of stateEntry.processedLines.keys()) {
+				if (!linesToKeep.has(lineNum)) {
+					stateEntry.processedLines.delete(lineNum);
+				}
+			}
+		}
+	}
 
 	/**
 	 * Checks if a line is within frontmatter (YAML)
@@ -42,8 +100,8 @@ export class TagDetector {
 	 * @returns Array of tag names (without the # prefix)
 	 */
 	private extractTagsFromLine(line: string): string[] {
-		// Regex to match #tag or #nested/tag
-		const tagRegex = /#([a-zA-Z0-9_/-]+)/g;
+		// Use shared regex pattern to match #tag or #nested/tag
+		const tagRegex = new RegExp(TAG_REGEX.source, TAG_REGEX.flags);
 		const tags: string[] = [];
 		let match;
 
@@ -159,6 +217,8 @@ export class TagDetector {
 		}
 
 		// Get tags already processed on this specific line
+		// NOTE: Line numbers can shift when lines are inserted/deleted above, which may
+		// cause tags to trigger again. This is an acceptable limitation mitigated by debouncing.
 		const lineNumber = cursor.line;
 		const processedTagsOnLine = stateEntry.processedLines.get(lineNumber) || new Set<string>();
 
@@ -173,6 +233,9 @@ export class TagDetector {
 			const updatedTagsForLine = new Set([...processedTagsOnLine, ...newTags]);
 			stateEntry.processedLines.set(lineNumber, updatedTagsForLine);
 			stateEntry.lastModified = Date.now();
+
+			// Enforce line limit to prevent memory bloat
+			this.enforceLineLimitForFile(stateEntry);
 		}
 	}
 
@@ -180,6 +243,12 @@ export class TagDetector {
 	 * Clears all state and timers
 	 */
 	public cleanup(): void {
+		// Clear periodic cleanup timer
+		if (this.cleanupTimer) {
+			clearInterval(this.cleanupTimer);
+			this.cleanupTimer = null;
+		}
+
 		// Clear all debounce timers
 		for (const timer of this.debounceTimers.values()) {
 			clearTimeout(timer);

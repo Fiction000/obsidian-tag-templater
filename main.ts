@@ -4,7 +4,7 @@ import { DEFAULT_SETTINGS } from './src/settings';
 import { TagTemplaterSettingTab } from './src/settingsTab';
 import { TagDetector } from './src/tagDetector';
 import { NoteCreator } from './src/noteCreator';
-import { removeTagsFromLine } from './src/utils/sanitizer';
+import { removeTagsFromLine, extractValidTags } from './src/utils/sanitizer';
 
 export default class TagTemplaterPlugin extends Plugin {
 	settings: TagTemplaterSettings;
@@ -84,9 +84,9 @@ export default class TagTemplaterPlugin extends Plugin {
 
 					// If note was created successfully, replace the line with a link
 					if (createdFile) {
-						// Extract all tags from the line
-						const tagMatches = lineContent.match(/#[\w/-]+/g) || [];
-						const tags = tagMatches.join(' ');
+						// Extract valid tags (excluding those in code/comments)
+						const validTags = extractValidTags(lineContent);
+						const tags = validTags.join(' ');
 
 						// Create link to the new note
 						const link = `[[${createdFile.basename}]]`;
