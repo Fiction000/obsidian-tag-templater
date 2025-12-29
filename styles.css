@@ -1,0 +1,8 @@
+/* Template path validation - subtle border color change */
+.setting-item input.is-valid {
+	border-color: var(--color-green);
+}
+
+.setting-item input.is-invalid {
+	border-color: var(--color-red);
+}

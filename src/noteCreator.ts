@@ -2,6 +2,7 @@ import { App, Notice, TFile, normalizePath } from 'obsidian';
 import { TagConfig, TagTemplaterSettings } from './types';
 import { sanitizeFilename, removeTagsFromLine } from './utils/sanitizer';
 import { ensureFolderExists, getUniqueFilename, validateTemplate } from './utils/fileUtils';
+import { createTemplateContext, substituteVariables } from './utils/templateVariables';
 
 export class NoteCreator {
 	constructor(private app: App, private settings: TagTemplaterSettings) {}
@@ -85,9 +86,20 @@ export class NoteCreator {
 
 		const templateContent = await this.app.vault.read(templateFile);
 
+		// Create template context
+		const context = createTemplateContext(
+			lineWithoutTags,
+			tagConfig.tagName,
+			finalName,
+			sourceFile
+		);
+
+		// Substitute variables
+		const processedContent = substituteVariables(templateContent, context);
+
 		// Create the new file
 		try {
-			const newFile = await this.app.vault.create(uniquePath, templateContent);
+			const newFile = await this.app.vault.create(uniquePath, processedContent);
 
 			// Show notification on success if enabled
 			if (this.settings.enableNotifications) {

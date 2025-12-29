@@ -129,6 +129,11 @@ You can use hierarchical tags for more specific configurations:
 - **Enable notifications**: Show notifications when notes are created
 - **Debounce delay**: Wait time (ms) before processing tag changes (default: 500)
 
+**UI Enhancements:**
+- Template paths support autocomplete (shows all .md files)
+- Output folders support autocomplete (shows all folders)
+- Template paths show visual validation (green=valid, red=invalid)
+
 ## Features in Detail
 
 ### Automatic Filename Sanitization
@@ -164,6 +169,87 @@ Created from: [[Source Note Name]]
 
 This helps you track where notes originated from.
 
+## Template Variables
+
+Templates support dynamic placeholders that are automatically replaced when creating notes:
+
+### Available Variables
+
+- `{{date}}` - Current date (YYYY-MM-DD format)
+- `{{time}}` - Current time (HH:MM format)
+- `{{datetime}}` - Current date and time (YYYY-MM-DD HH:MM)
+- `{{line}}` - Original line content without tags
+- `{{tag}}` - The tag that triggered creation
+- `{{filename}}` - Generated filename for the note
+- `{{source}}` - Name of the source file
+
+### Example Template with Variables
+
+**Template file** (`Templates/Task.md`):
+```markdown
+---
+created: {{datetime}}
+tag: {{tag}}
+source: [[{{source}}]]
+---
+
+# {{line}}
+
+## Details
+
+Created on {{date}} at {{time}}
+
+---
+
+## Notes
+
+```
+
+**Usage:**
+Type in any note:
+```
+Buy groceries #todo
+```
+
+**Created note** (`Tasks/Buy groceries - Todo.md`):
+```markdown
+---
+created: 2025-12-29 14:30
+tag: todo
+source: [[Daily Notes]]
+---
+
+# Buy groceries
+
+## Details
+
+Created on 2025-12-29 at 14:30
+
+---
+
+## Notes
+
+```
+
+### Common Variable Patterns
+
+**Daily Note Template:**
+```markdown
+# {{line}}
+
+Created: {{datetime}}
+From: [[{{source}}]]
+```
+
+**Meeting Notes:**
+```markdown
+# Meeting: {{line}}
+
+**Date:** {{date}}
+**Time:** {{time}}
+**Tag:** #{{tag}}
+```
+
 ## Troubleshooting
 
 **Notes aren't being created:**
@@ -181,6 +267,36 @@ This helps you track where notes originated from.
 - This only happens if you manually add the same tag again
 - Existing tags won't trigger creation
 - File state is cleared when you close Obsidian
+
+## Frequently Asked Questions
+
+### Does this work with nested tags?
+Yes! You can configure `#todo/urgent` separately from `#todo`. Each tag configuration is matched exactly.
+
+### Will tags in code blocks trigger note creation?
+No, the plugin ignores tags in:
+- Inline code (`` `#tag` ``)
+- Code blocks
+- Obsidian comments (`%% #tag %%`)
+- YAML frontmatter
+
+### What happens if I add the same tag twice?
+The plugin tracks which tags have been processed on each line. Adding the same tag again on the same line won't create a duplicate note. However, if you add it on a new line, it will trigger again.
+
+### Can I use the same template for multiple tags?
+Yes! Multiple tag configurations can share the same template path.
+
+### What if my template file doesn't exist?
+The plugin validates template paths and shows a notification if the template isn't found. With template path validation enabled (in settings), invalid paths are highlighted in red.
+
+### How are filenames generated?
+Filenames are created from the line content (without tags), with invalid characters replaced by dashes. If a file already exists, a number is appended (e.g., "Note 1.md", "Note 2.md").
+
+### Can I disable notifications?
+Yes, go to Settings → Tag Templater and toggle "Enable notifications" off.
+
+### Does this slow down typing?
+No, the plugin uses debouncing (default 500ms delay) to avoid processing every keystroke. You won't notice any performance impact during normal typing.
 
 ## Support
 

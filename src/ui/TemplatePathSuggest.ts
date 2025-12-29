@@ -1,4 +1,4 @@
-import { AbstractInputSuggest, App, TFile } from 'obsidian';
+import { AbstractInputSuggest, App, TFile, normalizePath } from 'obsidian';
 
 /**
  * Provides autocomplete suggestions for template file paths
@@ -48,4 +48,41 @@ export class TemplatePathSuggest extends AbstractInputSuggest<TFile> {
 		this.setValue(file.path);
 		this.close();
 	}
+}
+
+/**
+ * Adds real-time validation indicator to a template path input field
+ * Shows green border for valid paths, red border for invalid paths
+ * @param app The Obsidian app instance
+ * @param inputEl The input element to validate
+ */
+export function addValidationIndicator(
+	app: App,
+	inputEl: HTMLInputElement
+): void {
+	const validatePath = () => {
+		const path = inputEl.value.trim();
+
+		if (!path) {
+			inputEl.removeClass('is-valid', 'is-invalid');
+			return;
+		}
+
+		const file = app.vault.getAbstractFileByPath(normalizePath(path));
+		const isValid = file !== null && file instanceof TFile;
+
+		if (isValid) {
+			inputEl.addClass('is-valid');
+			inputEl.removeClass('is-invalid');
+		} else {
+			inputEl.addClass('is-invalid');
+			inputEl.removeClass('is-valid');
+		}
+	};
+
+	// Validate on input change
+	inputEl.addEventListener('input', validatePath);
+
+	// Initial validation
+	validatePath();
 }

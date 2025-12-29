@@ -1,7 +1,8 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import TagTemplaterPlugin from '../main';
 import { TagConfig } from './types';
-import { TemplatePathSuggest } from './ui/TemplatePathSuggest';
+import { TemplatePathSuggest, addValidationIndicator } from './ui/TemplatePathSuggest';
+import { FolderPathSuggest } from './ui/FolderPathSuggest';
 
 export class TagTemplaterSettingTab extends PluginSettingTab {
 	plugin: TagTemplaterPlugin;
@@ -22,13 +23,18 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Default output folder')
 			.setDesc('Default folder for created notes (leave empty for vault root)')
-			.addText(text => text
-				.setPlaceholder('folder/path')
-				.setValue(this.plugin.settings.defaultOutputFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.defaultOutputFolder = value;
-					await this.plugin.saveSettings();
-				}));
+			.addText(text => {
+				text
+					.setPlaceholder('folder/path')
+					.setValue(this.plugin.settings.defaultOutputFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultOutputFolder = value;
+						await this.plugin.saveSettings();
+					});
+
+				// Attach folder autocomplete
+				new FolderPathSuggest(this.app, text.inputEl);
+			});
 
 		// Enable notifications setting
 		new Setting(containerEl)
@@ -133,6 +139,9 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 
 				// Attach autocomplete to the input element
 				new TemplatePathSuggest(this.app, text.inputEl);
+
+				// Add validation indicator
+				addValidationIndicator(this.app, text.inputEl);
 			});
 
 		// Filename suffix
@@ -151,13 +160,18 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 		new Setting(configContainer)
 			.setName('Output folder')
 			.setDesc('Folder for notes created with this tag (leave empty to use default)')
-			.addText(text => text
-				.setPlaceholder('Todos')
-				.setValue(config.outputFolder)
-				.onChange(async (value) => {
-					config.outputFolder = value.trim();
-					await this.plugin.saveSettings();
-				}));
+			.addText(text => {
+				text
+					.setPlaceholder('Todos')
+					.setValue(config.outputFolder)
+					.onChange(async (value) => {
+						config.outputFolder = value.trim();
+						await this.plugin.saveSettings();
+					});
+
+				// Attach folder autocomplete
+				new FolderPathSuggest(this.app, text.inputEl);
+			});
 
 		// Enabled toggle
 		new Setting(configContainer)
