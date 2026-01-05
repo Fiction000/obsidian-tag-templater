@@ -155,12 +155,12 @@ export class TagDetector {
 	 * @param debounceDelay Delay in milliseconds
 	 * @param callback Function to call when new tags are detected
 	 */
-	public onEditorChange(
+	public async onEditorChange(
 		editor: Editor,
 		view: MarkdownView,
 		debounceDelay: number,
-		callback: (tags: string[], line: string, filePath: string) => void
-	): void {
+		callback: (tags: string[], line: string, filePath: string) => Promise<string | null>
+	): Promise<void> {
 		const filePath = view.file?.path;
 		if (!filePath) return;
 
@@ -170,8 +170,8 @@ export class TagDetector {
 		}
 
 		// Set new debounce timer
-		const timer = setTimeout(() => {
-			this.processEditorChange(editor, view, callback);
+		const timer = setTimeout(async () => {
+			await this.processEditorChange(editor, view, callback);
 		}, debounceDelay);
 
 		this.debounceTimers.set(filePath, timer);
@@ -183,11 +183,11 @@ export class TagDetector {
 	 * @param view The markdown view
 	 * @param callback Function to call when new tags are detected
 	 */
-	private processEditorChange(
+	private async processEditorChange(
 		editor: Editor,
 		view: MarkdownView,
-		callback: (tags: string[], line: string, filePath: string) => void
-	): void {
+		callback: (tags: string[], line: string, filePath: string) => Promise<string | null>
+	): Promise<void> {
 		const filePath = view.file?.path;
 		if (!filePath) return;
 
@@ -226,16 +226,18 @@ export class TagDetector {
 		const newTags = currentTags.filter(tag => !processedTagsOnLine.has(tag));
 
 		if (newTags.length > 0) {
-			// Call the callback with new tags
-			callback(newTags, currentLine, filePath);
+			// Call the callback and wait for the processed tag
+			const processedTag = await callback(newTags, currentLine, filePath);
 
-			// Update state - mark these tags as processed on this line
-			const updatedTagsForLine = new Set([...processedTagsOnLine, ...newTags]);
-			stateEntry.processedLines.set(lineNumber, updatedTagsForLine);
-			stateEntry.lastModified = Date.now();
+			// Only mark the tag that was actually processed
+			if (processedTag) {
+				const updatedTagsForLine = new Set([...processedTagsOnLine, processedTag]);
+				stateEntry.processedLines.set(lineNumber, updatedTagsForLine);
+				stateEntry.lastModified = Date.now();
 
-			// Enforce line limit to prevent memory bloat
-			this.enforceLineLimitForFile(stateEntry);
+				// Enforce line limit to prevent memory bloat
+				this.enforceLineLimitForFile(stateEntry);
+			}
 		}
 	}
 

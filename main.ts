@@ -61,12 +61,12 @@ export default class TagTemplaterPlugin extends Plugin {
 	 * @param editor The editor instance
 	 * @param view The markdown view
 	 */
-	private handleEditorChange(editor: Editor, view: MarkdownView): void {
-		this.tagDetector.onEditorChange(
+	private async handleEditorChange(editor: Editor, view: MarkdownView): Promise<void> {
+		await this.tagDetector.onEditorChange(
 			editor,
 			view,
 			this.settings.debounceDelay,
-			async (newTags: string[], lineContent: string, filePath: string) => {
+			async (newTags: string[], lineContent: string, filePath: string): Promise<string | null> => {
 				// Find the first matching tag configuration
 				const matchingConfig = this.noteCreator.findMatchingConfig(newTags);
 
@@ -97,13 +97,21 @@ export default class TagTemplaterPlugin extends Plugin {
 						// Replace the line
 						editor.setLine(lineNumber, newLine);
 
-						// Move cursor to end of line
-						editor.setCursor({
-							line: lineNumber,
-							ch: newLine.length
-						});
+						// Only move cursor if user hasn't moved away
+						const currentCursor = editor.getCursor();
+						if (currentCursor.line === lineNumber) {
+							editor.setCursor({
+								line: lineNumber,
+								ch: newLine.length
+							});
+						}
+
+						// Return the tag that was processed
+						return matchingConfig.tagName;
 					}
 				}
+
+				return null;
 			}
 		);
 	}
