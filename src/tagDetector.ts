@@ -1,4 +1,4 @@
-import { Editor, MarkdownView } from 'obsidian';
+import { App, Editor, MarkdownView } from 'obsidian';
 import { TagConfig, TagStateEntry, TAG_REGEX } from './types';
 
 // Configuration constants for state cleanup
@@ -11,7 +11,7 @@ export class TagDetector {
 	private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
 	private cleanupTimer: NodeJS.Timeout | null = null;
 
-	constructor() {
+	constructor(private app: App) {
 		// Start periodic cleanup to prevent memory leaks
 		this.startPeriodicCleanup();
 	}
@@ -171,7 +171,13 @@ export class TagDetector {
 
 		// Set new debounce timer
 		const timer = setTimeout(async () => {
-			await this.processEditorChange(editor, view, callback);
+			try {
+				await this.processEditorChange(editor, view, callback);
+			} catch (error) {
+				console.error('Tag Templater: Error processing editor change:', error);
+				// Clean up timer on error
+				this.debounceTimers.delete(filePath);
+			}
 		}, debounceDelay);
 
 		this.debounceTimers.set(filePath, timer);
@@ -191,53 +197,65 @@ export class TagDetector {
 		const filePath = view.file?.path;
 		if (!filePath) return;
 
-		const cursor = editor.getCursor();
-		const currentLine = editor.getLine(cursor.line);
-
-		// Check if we're in frontmatter
-		if (this.isInFrontmatter(editor, cursor.line)) {
+		// Validate that this view is still the active view
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!activeView || activeView.file?.path !== filePath) {
+			// View is no longer active or file has changed, skip processing
 			return;
 		}
 
-		// Extract tags from current line
-		const currentTags = this.extractTagsFromLine(currentLine);
+		try {
+			const cursor = editor.getCursor();
+			const currentLine = editor.getLine(cursor.line);
 
-		if (currentTags.length === 0) {
-			return;  // No tags to process
-		}
-
-		// Get or initialize state for this file
-		let stateEntry = this.fileTagState.get(filePath);
-		if (!stateEntry) {
-			stateEntry = {
-				processedLines: new Map(),
-				lastModified: Date.now()
-			};
-			this.fileTagState.set(filePath, stateEntry);
-		}
-
-		// Get tags already processed on this specific line
-		// NOTE: Line numbers can shift when lines are inserted/deleted above, which may
-		// cause tags to trigger again. This is an acceptable limitation mitigated by debouncing.
-		const lineNumber = cursor.line;
-		const processedTagsOnLine = stateEntry.processedLines.get(lineNumber) || new Set<string>();
-
-		// Find new tags (tags not yet processed on this line)
-		const newTags = currentTags.filter(tag => !processedTagsOnLine.has(tag));
-
-		if (newTags.length > 0) {
-			// Call the callback and wait for the processed tag
-			const processedTag = await callback(newTags, currentLine, filePath);
-
-			// Only mark the tag that was actually processed
-			if (processedTag) {
-				const updatedTagsForLine = new Set([...processedTagsOnLine, processedTag]);
-				stateEntry.processedLines.set(lineNumber, updatedTagsForLine);
-				stateEntry.lastModified = Date.now();
-
-				// Enforce line limit to prevent memory bloat
-				this.enforceLineLimitForFile(stateEntry);
+			// Check if we're in frontmatter
+			if (this.isInFrontmatter(editor, cursor.line)) {
+				return;
 			}
+
+			// Extract tags from current line
+			const currentTags = this.extractTagsFromLine(currentLine);
+
+			if (currentTags.length === 0) {
+				return;  // No tags to process
+			}
+
+			// Get or initialize state for this file
+			let stateEntry = this.fileTagState.get(filePath);
+			if (!stateEntry) {
+				stateEntry = {
+					processedLines: new Map(),
+					lastModified: Date.now()
+				};
+				this.fileTagState.set(filePath, stateEntry);
+			}
+
+			// Get tags already processed on this specific line
+			// NOTE: Line numbers can shift when lines are inserted/deleted above, which may
+			// cause tags to trigger again. This is an acceptable limitation mitigated by debouncing.
+			const lineNumber = cursor.line;
+			const processedTagsOnLine = stateEntry.processedLines.get(lineNumber) || new Set<string>();
+
+			// Find new tags (tags not yet processed on this line)
+			const newTags = currentTags.filter(tag => !processedTagsOnLine.has(tag));
+
+			if (newTags.length > 0) {
+				// Call the callback and wait for the processed tag
+				const processedTag = await callback(newTags, currentLine, filePath);
+
+				// Only mark the tag that was actually processed
+				if (processedTag) {
+					const updatedTagsForLine = new Set([...processedTagsOnLine, processedTag]);
+					stateEntry.processedLines.set(lineNumber, updatedTagsForLine);
+					stateEntry.lastModified = Date.now();
+
+					// Enforce line limit to prevent memory bloat
+					this.enforceLineLimitForFile(stateEntry);
+				}
+			}
+		} catch (error) {
+			console.error('Tag Templater: Error in processEditorChange:', error);
+			throw error; // Re-throw to be caught by setTimeout handler
 		}
 	}
 

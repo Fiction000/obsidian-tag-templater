@@ -15,7 +15,7 @@ export default class TagTemplaterPlugin extends Plugin {
 		await this.loadSettings();
 
 		// Initialize services
-		this.tagDetector = new TagDetector();
+		this.tagDetector = new TagDetector(this.app);
 		this.noteCreator = new NoteCreator(this.app, this.settings);
 
 		// Register editor-change event
@@ -62,57 +62,66 @@ export default class TagTemplaterPlugin extends Plugin {
 	 * @param view The markdown view
 	 */
 	private async handleEditorChange(editor: Editor, view: MarkdownView): Promise<void> {
-		await this.tagDetector.onEditorChange(
-			editor,
-			view,
-			this.settings.debounceDelay,
-			async (newTags: string[], lineContent: string, filePath: string): Promise<string | null> => {
-				// Find the first matching tag configuration
-				const matchingConfig = this.noteCreator.findMatchingConfig(newTags);
+		try {
+			await this.tagDetector.onEditorChange(
+				editor,
+				view,
+				this.settings.debounceDelay,
+				async (newTags: string[], lineContent: string, filePath: string): Promise<string | null> => {
+					try {
+						// Find the first matching tag configuration
+						const matchingConfig = this.noteCreator.findMatchingConfig(newTags);
 
-				if (matchingConfig && view.file) {
-					// Store the current cursor position
-					const cursor = editor.getCursor();
-					const lineNumber = cursor.line;
+						if (matchingConfig && view.file) {
+							// Store the current cursor position
+							const cursor = editor.getCursor();
+							const lineNumber = cursor.line;
 
-					// Create note from the matching tag
-					const createdFile = await this.noteCreator.createNoteFromTag(
-						matchingConfig,
-						lineContent,
-						view.file
-					);
+							// Create note from the matching tag
+							const createdFile = await this.noteCreator.createNoteFromTag(
+								matchingConfig,
+								lineContent,
+								view.file
+							);
 
-					// If note was created successfully, replace the line with a link
-					if (createdFile) {
-						// Extract valid tags (excluding those in code/comments)
-						const validTags = extractValidTags(lineContent);
-						const tags = validTags.join(' ');
+							// If note was created successfully, replace the line with a link
+							if (createdFile) {
+								// Extract valid tags (excluding those in code/comments)
+								const validTags = extractValidTags(lineContent);
+								const tags = validTags.join(' ');
 
-						// Create link to the new note
-						const link = `[[${createdFile.basename}]]`;
+								// Create link to the new note
+								const link = `[[${createdFile.basename}]]`;
 
-						// Construct new line: link followed by tags (if any)
-						const newLine = tags ? `${link} ${tags}` : link;
+								// Construct new line: link followed by tags (if any)
+								const newLine = tags ? `${link} ${tags}` : link;
 
-						// Replace the line
-						editor.setLine(lineNumber, newLine);
+								// Replace the line
+								editor.setLine(lineNumber, newLine);
 
-						// Only move cursor if user hasn't moved away
-						const currentCursor = editor.getCursor();
-						if (currentCursor.line === lineNumber) {
-							editor.setCursor({
-								line: lineNumber,
-								ch: newLine.length
-							});
+								// Only move cursor if user hasn't moved away
+								const currentCursor = editor.getCursor();
+								if (currentCursor.line === lineNumber) {
+									editor.setCursor({
+										line: lineNumber,
+										ch: newLine.length
+									});
+								}
+
+								// Return the tag that was processed
+								return matchingConfig.tagName;
+							}
 						}
 
-						// Return the tag that was processed
-						return matchingConfig.tagName;
+						return null;
+					} catch (error) {
+						console.error('Tag Templater: Error in note creation callback:', error);
+						return null;
 					}
 				}
-
-				return null;
-			}
-		);
+			);
+		} catch (error) {
+			console.error('Tag Templater: Error in handleEditorChange:', error);
+		}
 	}
 }
