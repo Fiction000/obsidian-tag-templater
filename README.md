@@ -1,26 +1,49 @@
 # Tag Templater
 
-An Obsidian plugin that automatically creates notes from templates when you add specific tags to your content.
+Create new notes instantly without breaking your writing flow. Just add a tag, and the right template is applied automatically.
+
+## Why you need this
+
+This plugin keeps you in the flow of writing when creating a new note. In typical scenario, you create the wiki link [[like this]] -> go to the created note -> then choose from the template. This plugin automates this process based on what tag you applied to the line you just written so that you don't get interrupted by thinking like "what template do I use for this note?".
 
 ## Features
 
-- Automatically creates notes when you type configured tags in your content
-- Each tag can have its own template and settings
-- Smart filename generation from line content
+**Stay in your writing flow:**
+- Type a tag, get a note - no popups, no decisions, no interruptions
+- Your line content becomes the filename automatically
+- The right template is applied based on which tag you use
+
+**Smart and flexible:**
+- Each tag can have its own template, folder, and filename pattern
 - Support for nested/hierarchical tags (e.g., `#todo/urgent`)
-- Automatically adds backlinks to source notes
-- Ignores tags in frontmatter/metadata
-- Only triggers on newly added tags (won't duplicate)
-- Customizable output folders per tag
-- Configurable filename suffixes
+- Only triggers on newly added tags - edit freely without duplicates
+- Ignores tags in code blocks, comments, and frontmatter
+
+**Seamless integration:**
+- Automatic backlinks to track where notes came from
+- Works across multiple files without issues
+- Handles line edits and deletions gracefully
 
 ## How It Works
 
-1. Configure a tag (e.g., `todo`) with a template path
-2. When you type `#todo` on a line in your note, the plugin detects it
-3. A new note is automatically created using your template
-4. The filename is based on the line content (e.g., "Buy groceries #todo" → "Buy groceries - Todo.md")
-5. A backlink to the source note is added automatically
+**The typical workflow without this plugin:**
+1. Write a line: "Buy groceries"
+2. Create a wiki link: `[[Buy groceries]]`
+3. Click the link to open the new note
+4. Choose a template from your template picker
+5. Apply the template
+6. Go back to your original note
+
+**With Tag Templater:**
+1. Write: "Buy groceries #todo"
+2. *That's it.* The note is created with your todo template automatically.
+
+**Behind the scenes:**
+- You configure tags once (e.g., `#todo` → Todo template)
+- When you type the tag, the plugin creates the note instantly
+- The filename comes from your line content ("Buy groceries - Todo.md")
+- A backlink to your current note is added automatically
+- Your cursor stays right where you are - no context switching
 
 ## Installation
 
@@ -60,9 +83,9 @@ npm run build
 4. Make changes to the code
 5. Reload Obsidian to see your changes
 
-## Usage
+## Getting Started
 
-### Basic Configuration
+### Setting Up Your First Tag
 
 1. Open Settings → Tag Templater
 2. Click "Add tag configuration"
@@ -94,14 +117,18 @@ Status: [ ] To Do
 
 ```
 
-**Usage:**
-Type in any note:
+**Now just write naturally:**
 ```
 Buy groceries #todo
 ```
 
-**Result:**
-A new note is created at `Tasks/Buy groceries - Todo.md` with:
+**What happens:**
+- Note created instantly at `Tasks/Buy groceries - Todo.md`
+- Your todo template is applied
+- Backlink to your current note is added
+- Your cursor stays right where it is - keep writing!
+
+**The created note contains:**
 ```markdown
 Created from: [[Original Note]]
 
@@ -115,13 +142,16 @@ Status: [ ] To Do
 
 ```
 
-### Nested Tags
+### Nested Tags for Different Contexts
 
-You can use hierarchical tags for more specific configurations:
+Use hierarchical tags when you need different templates for different types:
 
-- Configure `todo/urgent` separately from `todo`
-- `#todo/urgent` will match only the `todo/urgent` configuration
-- `#todo` will match only the `todo` configuration
+- `#todo` → Regular todo template
+- `#todo/urgent` → Urgent todo template with priority fields
+- `#meeting` → Meeting notes template
+- `#meeting/1on1` → One-on-one meeting template with specific sections
+
+Each tag configuration is matched exactly, so you can have as much specificity as you need.
 
 ### Settings
 
@@ -252,51 +282,47 @@ From: [[{{source}}]]
 
 ## Troubleshooting
 
-**Notes aren't being created:**
-- Check that the tag configuration is enabled
-- Verify the template path is correct
-- Ensure you're adding the tag in content (not frontmatter)
-- Check that the tag name matches exactly (without #)
+**Nothing happens when I add a tag:**
+- Make sure the tag is enabled in settings
+- Check that your template file exists at the path you specified
+- Tags in frontmatter, code blocks, or comments are ignored (by design)
+- The tag name should be entered without the `#` in settings
 
-**Template not found error:**
-- Verify the template file exists at the specified path
-- Check for typos in the template path
-- Use forward slashes in paths (e.g., `Templates/Todo.md`)
+**"Template not found" notification:**
+- Double-check the template path in settings
+- Use forward slashes: `Templates/Todo.md` not `Templates\Todo.md`
+- The template validation in settings will show green when the path is correct
 
-**Duplicate notes being created:**
-- This only happens if you manually add the same tag again
-- Existing tags won't trigger creation
-- File state is cleared when you close Obsidian
+**The plugin keeps creating multiple notes:**
+- This shouldn't happen - if it does, it's a bug! Please report it
+- The plugin tracks what's been processed and won't create duplicates
+- You can safely edit lines with tags - they won't trigger again unless the content changes significantly
 
 ## Frequently Asked Questions
 
-### Does this work with nested tags?
-Yes! You can configure `#todo/urgent` separately from `#todo`. Each tag configuration is matched exactly.
+### Will this slow down my typing or Obsidian?
+No. The plugin waits 500ms after you stop typing before doing anything, and the processing is nearly instant. You won't notice any performance impact.
 
-### Will tags in code blocks trigger note creation?
-No, the plugin ignores tags in:
-- Inline code (`` `#tag` ``)
-- Code blocks
-- Obsidian comments (`%% #tag %%`)
-- YAML frontmatter
+### What if I want to write about a tag without creating a note?
+Just put it in a code block (`` `#todo` ``), comment (`%% #todo %%`), or frontmatter. The plugin ignores tags in these contexts.
 
-### What happens if I add the same tag twice?
-The plugin tracks which tags have been processed on each line. Adding the same tag again on the same line won't create a duplicate note. However, if you add it on a new line, it will trigger again.
+### Can I edit a line after creating a note?
+Absolutely. Edit freely - the plugin won't create duplicates. It only triggers when you add a *new* tag or when the content changes significantly (like deleting and rewriting).
 
-### Can I use the same template for multiple tags?
-Yes! Multiple tag configurations can share the same template path.
+### What happens if I delete a line and reuse the same line number?
+The plugin is smart enough to detect content changes. If you delete a line and write something new on the same line number, it will work correctly.
 
-### What if my template file doesn't exist?
-The plugin validates template paths and shows a notification if the template isn't found. With template path validation enabled (in settings), invalid paths are highlighted in red.
+### Can different tags use the same template?
+Yes! You might want `#task`, `#todo`, and `#action` to all use the same task template but save to different folders.
 
-### How are filenames generated?
-Filenames are created from the line content (without tags), with invalid characters replaced by dashes. If a file already exists, a number is appended (e.g., "Note 1.md", "Note 2.md").
+### How do I organize where notes get created?
+Each tag can have its own output folder. You can also set a default folder in settings that's used when a tag doesn't specify one.
 
-### Can I disable notifications?
-Yes, go to Settings → Tag Templater and toggle "Enable notifications" off.
+### What if a note with that name already exists?
+The plugin automatically adds a number: "Note.md" → "Note 1.md" → "Note 2.md". You'll never accidentally overwrite an existing note.
 
-### Does this slow down typing?
-No, the plugin uses debouncing (default 500ms delay) to avoid processing every keystroke. You won't notice any performance impact during normal typing.
+### Can I turn off the success notifications?
+Yes, just toggle "Enable notifications" off in settings. Errors will still be shown (you probably want to know about those!).
 
 ## Support
 
