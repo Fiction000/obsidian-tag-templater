@@ -17,9 +17,23 @@ export interface TagConfig {
 	enabled: boolean;
 }
 
+export interface ProcessedLineInfo {
+	content: string;           // The line content when tags were processed
+	processedTags: Set<string>; // Tags that have been processed on this line
+}
+
 export interface TagStateEntry {
 	/**
-	 * Map of line numbers to sets of processed tags on each line
+	 * Map of line numbers to processed line information
+	 *
+	 * Each entry stores:
+	 * - The line content when tags were processed
+	 * - The set of tags that have been processed
+	 *
+	 * When line content changes, the processed tags are cleared to allow reprocessing.
+	 * This handles cases where:
+	 * - A line is deleted and new content is added on the same line number
+	 * - A line is edited to contain completely different content
 	 *
 	 * IMPORTANT: Line numbers can shift when lines are inserted/deleted above.
 	 * This means:
@@ -28,12 +42,7 @@ export interface TagStateEntry {
 	 * - This could cause the tag to trigger again when editing the shifted line
 	 * - This is an acceptable limitation as the debouncing mechanism prevents
 	 *   rapid duplicate triggers
-	 *
-	 * Alternative approaches considered:
-	 * - Content hashing: Would fail when line content changes (which happens after link insertion)
-	 * - Line anchors: Not available in Obsidian API
-	 * - Perfect tracking: Would require monitoring all document edits (complex and performance-heavy)
 	 */
-	processedLines: Map<number, Set<string>>;
+	processedLines: Map<number, ProcessedLineInfo>;
 	lastModified: number;
 }

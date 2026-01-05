@@ -231,10 +231,19 @@ export class TagDetector {
 			}
 
 			// Get tags already processed on this specific line
-			// NOTE: Line numbers can shift when lines are inserted/deleted above, which may
-			// cause tags to trigger again. This is an acceptable limitation mitigated by debouncing.
 			const lineNumber = cursor.line;
-			const processedTagsOnLine = stateEntry.processedLines.get(lineNumber) || new Set<string>();
+			const lineState = stateEntry.processedLines.get(lineNumber);
+
+			// If line content has changed, clear the processed tags for this line
+			// This handles cases where a line is deleted and new content is added,
+			// or when a line is edited to contain completely different content
+			if (lineState && lineState.content !== currentLine) {
+				stateEntry.processedLines.delete(lineNumber);
+			}
+
+			// Get current state (may be fresh after content change detection above)
+			const currentLineState = stateEntry.processedLines.get(lineNumber);
+			const processedTagsOnLine = currentLineState?.processedTags || new Set<string>();
 
 			// Find new tags (tags not yet processed on this line)
 			const newTags = currentTags.filter(tag => !processedTagsOnLine.has(tag));
@@ -245,8 +254,15 @@ export class TagDetector {
 
 				// Only mark the tag that was actually processed
 				if (processedTag) {
+					// Read the line again after callback to get updated content
+					// (callback may have modified the line by adding a link)
+					const updatedLine = editor.getLine(lineNumber);
+
 					const updatedTagsForLine = new Set([...processedTagsOnLine, processedTag]);
-					stateEntry.processedLines.set(lineNumber, updatedTagsForLine);
+					stateEntry.processedLines.set(lineNumber, {
+						content: updatedLine,  // Store the updated content, not the original
+						processedTags: updatedTagsForLine
+					});
 					stateEntry.lastModified = Date.now();
 
 					// Enforce line limit to prevent memory bloat
