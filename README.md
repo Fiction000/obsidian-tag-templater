@@ -8,7 +8,9 @@ This plugin keeps you in the flow of writing when creating a new note. In typica
 
 ## Features
 
-![obsidian-tag-templater-flow](https://github.com/user-attachments/assets/3bd67531-a33c-40d0-8113-955ac28e61ef)
+Workflow using the plugin
+
+https://github.com/user-attachments/assets/0ee0e791-35b8-4c14-83e5-0213458476eb
 
 **Stay in your writing flow:**
 - Type a tag, get a note - no popups, no decisions, no interruptions
