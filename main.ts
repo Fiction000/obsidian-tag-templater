@@ -36,14 +36,11 @@ export default class TagTemplaterPlugin extends Plugin {
 
 		// Add settings tab
 		this.addSettingTab(new TagTemplaterSettingTab(this.app, this));
-
-		console.log('Tag Templater plugin loaded');
 	}
 
 	onunload() {
 		// Clean up tag detector state and timers
 		this.tagDetector.cleanup();
-		console.log('Tag Templater plugin unloaded');
 	}
 
 	async loadSettings() {
