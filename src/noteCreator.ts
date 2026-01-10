@@ -40,7 +40,7 @@ export class NoteCreator {
 		// Validate template exists
 		if (!validateTemplate(this.app.vault, tagConfig.templatePath)) {
 			if (this.settings.enableNotifications) {
-				new Notice(`Template not found: ${tagConfig.templatePath}`);
+				new Notice(`template not found: ${tagConfig.templatePath}`);
 			}
 			return null;
 		}
@@ -79,7 +79,7 @@ export class NoteCreator {
 
 		if (!(abstractFile instanceof TFile)) {
 			if (this.settings.enableNotifications) {
-				new Notice(`Template is not a file: ${tagConfig.templatePath}`);
+				new Notice(`template is not a file: ${tagConfig.templatePath}`);
 			}
 			return null;
 		}
@@ -105,7 +105,7 @@ export class NoteCreator {
 
 			// Show notification on success if enabled
 			if (this.settings.enableNotifications) {
-				new Notice(`Created note: ${newFile.basename}`);
+				new Notice(`created note: ${newFile.basename}`);
 			}
 
 			return newFile;

@@ -58,7 +58,7 @@ export default class TagTemplaterPlugin extends Plugin {
 	 * @param editor The editor instance
 	 * @param view The markdown view
 	 */
-	private async handleEditorChange(editor: Editor, view: MarkdownView): Promise<void> {
+	private handleEditorChange(editor: Editor, view: MarkdownView): void {
 		try {
 			this.tagDetector.onEditorChange(
 				editor,
