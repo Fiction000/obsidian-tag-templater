@@ -24,12 +24,12 @@ export async function ensureFolderExists(vault: Vault, folderPath: string): Prom
  * @param extension The file extension (default: 'md')
  * @returns A unique file path
  */
-export async function getUniqueFilename(
+export function getUniqueFilename(
 	vault: Vault,
 	baseFolder: string,
 	baseName: string,
 	extension: string = 'md'
-): Promise<string> {
+): string {
 	let filename = `${baseName}.${extension}`;
 	let path = normalizePath(`${baseFolder}/${filename}`);
 
@@ -59,7 +59,7 @@ export async function getUniqueFilename(
  * @param templatePath The path to the template file
  * @returns True if the template exists, false otherwise
  */
-export async function validateTemplate(vault: Vault, templatePath: string): Promise<boolean> {
+export function validateTemplate(vault: Vault, templatePath: string): boolean {
 	const normalizedPath = normalizePath(templatePath);
 	const file = vault.getAbstractFileByPath(normalizedPath);
 	return file !== null;

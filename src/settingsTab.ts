@@ -17,7 +17,9 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', { text: 'Tag Templater Settings' });
+		new Setting(containerEl)
+			.setName('Tag Templater settings')
+			.setHeading();
 
 		// Default output folder setting
 		new Setting(containerEl)
@@ -63,12 +65,10 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 				}));
 
 		// Tag configurations section
-		containerEl.createEl('h3', { text: 'Tag Configurations' });
-
-		containerEl.createEl('p', {
-			text: 'Configure which tags trigger note creation and their templates.',
-			cls: 'setting-item-description'
-		});
+		new Setting(containerEl)
+			.setName('Tag configurations')
+			.setDesc('Configure which tags trigger note creation and their templates.')
+			.setHeading();
 
 		// Display existing tag configs
 		for (let i = 0; i < this.plugin.settings.tagConfigs.length; i++) {
@@ -102,7 +102,7 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 		const header = configContainer.createDiv({ cls: 'tag-config-header' });
 
 		new Setting(header)
-			.setName(`Tag Configuration ${index + 1}`)
+			.setName(`Tag configuration ${index + 1}`)
 			.addButton(button => button
 				.setButtonText('Remove')
 				.setWarning()

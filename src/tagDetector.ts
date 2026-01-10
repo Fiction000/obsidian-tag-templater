@@ -155,29 +155,32 @@ export class TagDetector {
 	 * @param debounceDelay Delay in milliseconds
 	 * @param callback Function to call when new tags are detected
 	 */
-	public async onEditorChange(
+	public onEditorChange(
 		editor: Editor,
 		view: MarkdownView,
 		debounceDelay: number,
 		callback: (tags: string[], line: string, filePath: string) => Promise<string | null>
-	): Promise<void> {
+	): void {
 		const filePath = view.file?.path;
 		if (!filePath) return;
 
 		// Clear existing debounce timer
-		if (this.debounceTimers.has(filePath)) {
-			clearTimeout(this.debounceTimers.get(filePath)!);
+		const existingTimer = this.debounceTimers.get(filePath);
+		if (existingTimer) {
+			clearTimeout(existingTimer);
 		}
 
 		// Set new debounce timer
-		const timer = setTimeout(async () => {
-			try {
-				await this.processEditorChange(editor, view, callback);
-			} catch (error) {
-				console.error('Tag Templater: Error processing editor change:', error);
-				// Clean up timer on error
-				this.debounceTimers.delete(filePath);
-			}
+		const timer = setTimeout(() => {
+			void (async () => {
+				try {
+					await this.processEditorChange(editor, view, callback);
+				} catch (error) {
+					console.error('Tag Templater: Error processing editor change:', error);
+					// Clean up timer on error
+					this.debounceTimers.delete(filePath);
+				}
+			})();
 		}, debounceDelay);
 
 		this.debounceTimers.set(filePath, timer);
@@ -301,8 +304,9 @@ export class TagDetector {
 	 */
 	public clearFileState(filePath: string): void {
 		this.fileTagState.delete(filePath);
-		if (this.debounceTimers.has(filePath)) {
-			clearTimeout(this.debounceTimers.get(filePath)!);
+		const timer = this.debounceTimers.get(filePath);
+		if (timer) {
+			clearTimeout(timer);
 			this.debounceTimers.delete(filePath);
 		}
 	}

@@ -21,7 +21,7 @@ export default class TagTemplaterPlugin extends Plugin {
 		// Register editor-change event
 		this.registerEvent(
 			this.app.workspace.on('editor-change', (editor: Editor, view: MarkdownView) => {
-				this.handleEditorChange(editor, view);
+				void this.handleEditorChange(editor, view);
 			})
 		);
 

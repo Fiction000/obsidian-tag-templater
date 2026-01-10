@@ -11,7 +11,7 @@ export function sanitizeFilename(input: string, maxLength: number = 255): string
 	let sanitized = input.trim();
 
 	// Remove or replace invalid characters: / \ : * ? " < > |
-	sanitized = sanitized.replace(/[\/\\:*?"<>|]/g, '-');
+	sanitized = sanitized.replace(/[/\\:*?"<>|]/g, '-');
 
 	// Remove leading/trailing dots and dashes
 	sanitized = sanitized.replace(/^[.-]+|[.-]+$/g, '');

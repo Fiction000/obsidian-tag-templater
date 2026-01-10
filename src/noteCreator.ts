@@ -38,7 +38,7 @@ export class NoteCreator {
 		sourceFile: TFile
 	): Promise<TFile | null> {
 		// Validate template exists
-		if (!await validateTemplate(this.app.vault, tagConfig.templatePath)) {
+		if (!validateTemplate(this.app.vault, tagConfig.templatePath)) {
 			if (this.settings.enableNotifications) {
 				new Notice(`Template not found: ${tagConfig.templatePath}`);
 			}
@@ -65,7 +65,7 @@ export class NoteCreator {
 		}
 
 		// Get unique filename
-		const uniquePath = await getUniqueFilename(
+		const uniquePath = getUniqueFilename(
 			this.app.vault,
 			targetFolder,
 			finalName,
@@ -73,16 +73,18 @@ export class NoteCreator {
 		);
 
 		// Read template content
-		const templateFile = this.app.vault.getAbstractFileByPath(
+		const abstractFile = this.app.vault.getAbstractFileByPath(
 			normalizePath(tagConfig.templatePath)
-		) as TFile;
+		);
 
-		if (!templateFile) {
+		if (!(abstractFile instanceof TFile)) {
 			if (this.settings.enableNotifications) {
-				new Notice(`Failed to read template: ${tagConfig.templatePath}`);
+				new Notice(`Template is not a file: ${tagConfig.templatePath}`);
 			}
 			return null;
 		}
+
+		const templateFile = abstractFile;
 
 		const templateContent = await this.app.vault.read(templateFile);
 
