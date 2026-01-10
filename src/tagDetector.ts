@@ -1,5 +1,5 @@
 import { App, Editor, MarkdownView } from 'obsidian';
-import { TagConfig, TagStateEntry, TAG_REGEX } from './types';
+import { TagStateEntry, TAG_REGEX } from './types';
 
 // Configuration constants for state cleanup
 const MAX_LINES_PER_FILE = 1000; // Maximum lines to track per file

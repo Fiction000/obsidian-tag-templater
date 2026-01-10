@@ -1,6 +1,5 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import TagTemplaterPlugin from '../main';
-import { TagConfig } from './types';
 import { TemplatePathSuggest, addValidationIndicator } from './ui/TemplatePathSuggest';
 import { FolderPathSuggest } from './ui/FolderPathSuggest';
 
@@ -16,10 +15,6 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Tag Templater settings')
-			.setHeading();
 
 		// Default output folder setting
 		new Setting(containerEl)
@@ -130,7 +125,7 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 			.setDesc('Path to the template file (autocomplete available)')
 			.addText(text => {
 				text
-					.setPlaceholder('Templates/Todo.md')
+					.setPlaceholder('templates/todo.md')
 					.setValue(config.templatePath)
 					.onChange(async (value) => {
 						config.templatePath = value.trim();
@@ -149,7 +144,7 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 			.setName('Filename suffix')
 			.setDesc('Text to append to generated filename')
 			.addText(text => text
-				.setPlaceholder(' - Todo')
+				.setPlaceholder(' - todo')
 				.setValue(config.filenameSuffix)
 				.onChange(async (value) => {
 					config.filenameSuffix = value;
@@ -162,7 +157,7 @@ export class TagTemplaterSettingTab extends PluginSettingTab {
 			.setDesc('Folder for notes created with this tag (leave empty to use default)')
 			.addText(text => {
 				text
-					.setPlaceholder('Todos')
+					.setPlaceholder('todos')
 					.setValue(config.outputFolder)
 					.onChange(async (value) => {
 						config.outputFolder = value.trim();

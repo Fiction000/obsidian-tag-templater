@@ -4,7 +4,7 @@ import { DEFAULT_SETTINGS } from './src/settings';
 import { TagTemplaterSettingTab } from './src/settingsTab';
 import { TagDetector } from './src/tagDetector';
 import { NoteCreator } from './src/noteCreator';
-import { removeTagsFromLine, extractValidTags } from './src/utils/sanitizer';
+import { extractValidTags } from './src/utils/sanitizer';
 
 export default class TagTemplaterPlugin extends Plugin {
 	settings: TagTemplaterSettings;
@@ -60,7 +60,7 @@ export default class TagTemplaterPlugin extends Plugin {
 	 */
 	private async handleEditorChange(editor: Editor, view: MarkdownView): Promise<void> {
 		try {
-			await this.tagDetector.onEditorChange(
+			this.tagDetector.onEditorChange(
 				editor,
 				view,
 				this.settings.debounceDelay,
